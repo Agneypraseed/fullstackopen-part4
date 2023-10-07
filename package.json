@@ -1,0 +1,30 @@
+{
+  "name": "blog_list",
+  "version": "1.0.0",
+  "description": "part 4 exercises",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Agneypraseed/fullstackopen-part4.git"
+  },
+  "author": "Agney",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Agneypraseed/fullstackopen-part4/issues"
+  },
+  "homepage": "https://github.com/Agneypraseed/fullstackopen-part4#readme",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "mongoose": "^7.6.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}
