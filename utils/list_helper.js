@@ -18,25 +18,26 @@ const favoriteBlog = (blogs) => {
 };
 
 const mostBlogs = (blogs) => {
-  const namestoCountMap = [];
+  const authorToBlogsCount = {};
   blogs.forEach((item) => {
     if (item.author) {
-      const existingName = namestoCountMap.find(
-        (entry) => entry.author === item.author
-      );
-      if (existingName) {
-        existingName.blogs += 1;
-      } else {
-        namestoCountMap.push({ author: item.author, blogs: 1 });
-      }
+      authorToBlogsCount[item.author] =
+        (authorToBlogsCount[item.author] || 0) + 1;
     }
   });
-  return namestoCountMap.length === 0
-    ? null
-    : namestoCountMap.reduce((max, current) => {
-        return current.blogs > max.blogs ? current : max;
-      }, namestoCountMap[0]);
+
+  const mostAuthor = Object.keys(authorToBlogsCount).reduce((most, author) => {
+    if (authorToBlogsCount[author] > authorToBlogsCount[most]) {
+      return author;
+    }
+    return most;
+  }, Object.keys(authorToBlogsCount)[0]);
+
+  return mostAuthor
+    ? { author: mostAuthor, blogs: authorToBlogsCount[mostAuthor] }
+    : null;
 };
+
 
 module.exports = {
   dummy,
