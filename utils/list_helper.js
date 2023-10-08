@@ -33,9 +33,16 @@ const mostBlogs = (blogs) => {
     : null;
 };
 
+const mostLikes = (blogs) => {
+  if (blogs.length === 0) return null;
+  const { author, likes } = favoriteBlog(blogs);
+  return { author, likes };
+};
+
 module.exports = {
   dummy,
   totalLikes,
   favoriteBlog,
   mostBlogs,
+  mostLikes,
 };
