@@ -21,6 +21,12 @@ test("the blog list application returns the correct amount of blog posts", async
   expect(response.body).toHaveLength(6);
 });
 
+test("the blog list application returns the correct amount of blog posts", async () => {
+    const response = await api.get("/api/blogs");
+  
+    expect(response.body).toHaveLength(6);
+  });
+
 afterAll(async () => {
   await mongoose.connection.close();
 });
