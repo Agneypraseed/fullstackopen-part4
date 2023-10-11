@@ -119,6 +119,16 @@ describe("Deleting a blog", () => {
 
     expect(titles).not.toContain(blogToDelete.title);
   });
+
+  test("gives with status code 400 if id is malinformed", async () => {
+    const malinformedId = "6526f113a68264af80977e9";
+
+    await api.delete(`/api/blogs/${malinformedId}`).expect(400);
+
+    const blogesAfter = await helper.blogsInDb();
+
+    expect(blogesAfter).toHaveLength(helper.initialBLogList.length);
+  });
 });
 
 afterAll(async () => {
