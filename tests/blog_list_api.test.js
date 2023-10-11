@@ -79,6 +79,24 @@ test("if the likes property is missing from the request, it will default to the 
   expect(addedBlogWithoutId).toEqual(newAddedBlog);
 });
 
+test("if the url property is missing from the request data, the backend return 400 status code", async () => {
+  const newBlog = {
+    title: "Test Blog",
+    author: "Agney Chan",
+  };
+
+  await api.post("/api/blogs").send(newBlog).expect(400);
+});
+
+test("if the title property is missing from the request data, the backend return 400 status code", async () => {
+  const newBlog = {
+    author: "Agney Chan",
+    url: "LeAgney.ai",
+  };
+
+  await api.post("/api/blogs").send(newBlog).expect(400);
+});
+
 afterAll(async () => {
   await mongoose.connection.close();
 });
