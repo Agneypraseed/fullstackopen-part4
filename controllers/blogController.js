@@ -40,4 +40,20 @@ blogsRouter.delete("/:id", async (request, response, next) => {
   }
 });
 
+blogsRouter.put("/:id", async (request, response, next) => {
+  const updatedBlog = {
+    likes: request.body.likes,
+  };
+
+  try {
+    const res = await Blog.findByIdAndUpdate(request.params.id, updatedBlog, {
+      new: true,
+    });
+    if (res) response.status(200).json(res);
+    response.status(400).json("Invalid Id");
+  } catch (error) {
+    next(error);
+  }
+});
+
 module.exports = blogsRouter;

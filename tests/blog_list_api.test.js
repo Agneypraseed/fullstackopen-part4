@@ -131,6 +131,21 @@ describe("Deleting a blog", () => {
   });
 });
 
+describe("Updating a blog", () => {
+  test("update the number of likes for a blog given the right id and the new number of likes updates the count of likes in the original blog", async () => {
+    const blogToUpdate = helper.initialBLogList[0];
+    const newlikes = {
+      likes: 300,
+    };
+    const result = await api
+      .put(`/api/blogs/${blogToUpdate._id}`)
+      .send(newlikes)
+      .expect(200);
+    console.log(result);
+    expect(result.body.likes).toEqual(newlikes.likes);
+  });
+});
+
 afterAll(async () => {
   await mongoose.connection.close();
 });
