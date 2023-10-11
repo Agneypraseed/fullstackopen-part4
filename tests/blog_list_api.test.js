@@ -57,6 +57,28 @@ describe("Adding a new Blog", () => {
   });
 });
 
+test("if the likes property is missing from the request, it will default to the value 0", async () => {
+  const newBlog = {
+    title: "Test Blog",
+    author: "Agney Chan",
+    url: "https://reactpatterns.com/",
+  };
+
+  await api
+    .post("/api/blogs")
+    .send(newBlog)
+    .expect(201)
+    .expect("Content-Type", /application\/json/);
+
+  const newBlogList = await helper.blogsInDb();
+  const newAddedBlog = { ...newBlog, likes: 0 };
+  const { id, ...addedBlogWithoutId } = newBlogList.find(
+    (blog) => blog.title === "Test Blog"
+  );
+
+  expect(addedBlogWithoutId).toEqual(newAddedBlog);
+});
+
 afterAll(async () => {
   await mongoose.connection.close();
 });
