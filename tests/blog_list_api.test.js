@@ -86,6 +86,9 @@ test("if the url property is missing from the request data, the backend return 4
   };
 
   await api.post("/api/blogs").send(newBlog).expect(400);
+
+  const newBlogList = await helper.blogsInDb();
+  expect(newBlogList).toHaveLength(helper.initialBLogList.length);
 });
 
 test("if the title property is missing from the request data, the backend return 400 status code", async () => {
@@ -95,6 +98,9 @@ test("if the title property is missing from the request data, the backend return
   };
 
   await api.post("/api/blogs").send(newBlog).expect(400);
+
+  const newBlogList = await helper.blogsInDb();
+  expect(newBlogList).toHaveLength(helper.initialBLogList.length + 1);
 });
 
 afterAll(async () => {
