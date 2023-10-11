@@ -15,17 +15,19 @@ beforeEach(async () => {
   }
 });
 
-test("the blog list application returns the correct amount of blog posts", async () => {
-  const response = await api.get("/api/blogs");
+describe("Getting all the blogs", () => {
+  test("the blog list application returns the correct amount of blog posts", async () => {
+    const response = await api.get("/api/blogs");
 
-  expect(response.body).toHaveLength(helper.initialBLogList.length);
-});
+    expect(response.body).toHaveLength(helper.initialBLogList.length);
+  });
 
-test("the unique identifier property of the blog posts is named id", async () => {
-  const response = await api.get("/api/blogs");
+  test("the unique identifier property of the blog posts is named id", async () => {
+    const response = await api.get("/api/blogs");
 
-  response.body.forEach((blog) => {
-    expect(blog.id).toBeDefined();
+    response.body.forEach((blog) => {
+      expect(blog.id).toBeDefined();
+    });
   });
 });
 
@@ -55,52 +57,68 @@ describe("Adding a new Blog", () => {
     const blogTitles = newBlogList.map((n) => n.title);
     expect(blogTitles).toContain("Test Blog");
   });
+
+  test("if the likes property is missing from the request, it will default to the value 0", async () => {
+    const newBlog = {
+      title: "Test Blog",
+      author: "Agney Chan",
+      url: "https://reactpatterns.com/",
+    };
+
+    await api
+      .post("/api/blogs")
+      .send(newBlog)
+      .expect(201)
+      .expect("Content-Type", /application\/json/);
+
+    const newBlogList = await helper.blogsInDb();
+    const newAddedBlog = { ...newBlog, likes: 0 };
+    const { id, ...addedBlogWithoutId } = newBlogList.find(
+      (blog) => blog.title === "Test Blog"
+    );
+
+    expect(addedBlogWithoutId).toEqual(newAddedBlog);
+  });
+
+  test("if the url property is missing from the request data, the backend return 400 status code", async () => {
+    const newBlog = {
+      title: "Test Blog",
+      author: "Agney Chan",
+    };
+
+    await api.post("/api/blogs").send(newBlog).expect(400);
+
+    const newBlogList = await helper.blogsInDb();
+    expect(newBlogList).toHaveLength(helper.initialBLogList.length);
+  });
+
+  test("if the title property is missing from the request data, the backend return 400 status code", async () => {
+    const newBlog = {
+      author: "Agney Chan",
+      url: "LeAgney.ai",
+    };
+
+    await api.post("/api/blogs").send(newBlog).expect(400);
+
+    const newBlogList = await helper.blogsInDb();
+    expect(newBlogList).toHaveLength(helper.initialBLogList.length);
+  });
 });
 
-test("if the likes property is missing from the request, it will default to the value 0", async () => {
-  const newBlog = {
-    title: "Test Blog",
-    author: "Agney Chan",
-    url: "https://reactpatterns.com/",
-  };
+describe("Deleting a blog", () => {
+  test("succeeds with status code 204 if id is valid", async () => {
+    const blogToDelete = helper.initialBLogList[0];
 
-  await api
-    .post("/api/blogs")
-    .send(newBlog)
-    .expect(201)
-    .expect("Content-Type", /application\/json/);
+    await api.delete(`/api/blogs/${blogToDelete._id}`).expect(204);
 
-  const newBlogList = await helper.blogsInDb();
-  const newAddedBlog = { ...newBlog, likes: 0 };
-  const { id, ...addedBlogWithoutId } = newBlogList.find(
-    (blog) => blog.title === "Test Blog"
-  );
+    const blogesAfter = await helper.blogsInDb();
 
-  expect(addedBlogWithoutId).toEqual(newAddedBlog);
-});
+    expect(blogesAfter).toHaveLength(helper.initialBLogList.length - 1);
 
-test("if the url property is missing from the request data, the backend return 400 status code", async () => {
-  const newBlog = {
-    title: "Test Blog",
-    author: "Agney Chan",
-  };
+    const titles = blogesAfter.map((r) => r.title);
 
-  await api.post("/api/blogs").send(newBlog).expect(400);
-
-  const newBlogList = await helper.blogsInDb();
-  expect(newBlogList).toHaveLength(helper.initialBLogList.length);
-});
-
-test("if the title property is missing from the request data, the backend return 400 status code", async () => {
-  const newBlog = {
-    author: "Agney Chan",
-    url: "LeAgney.ai",
-  };
-
-  await api.post("/api/blogs").send(newBlog).expect(400);
-
-  const newBlogList = await helper.blogsInDb();
-  expect(newBlogList).toHaveLength(helper.initialBLogList.length + 1);
+    expect(titles).not.toContain(blogToDelete.title);
+  });
 });
 
 afterAll(async () => {
