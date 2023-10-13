@@ -4,7 +4,10 @@ const User = require("../models/user");
 
 blogsRouter.get("/", async (request, response, next) => {
   try {
-    const blogs = await Blog.find({}).populate("user");
+    const blogs = await Blog.find({}).populate("user", {
+      username: 1,
+      name: 1,
+    });
     response.json(blogs);
   } catch (error) {
     next(error);
@@ -16,27 +19,20 @@ blogsRouter.post("/", async (request, response, next) => {
     return response.status(400).json("Title and URL cannot be empty");
   }
 
-  const users = await User.find({});
-  let randomUserId;
-  console.log(users.length);
-  if (users.length > 0) {
-    const randomIndex = Math.floor(Math.random() * users.length);
-    randomUserId = users[randomIndex].id;
-  } else {
-    console.log("No users found.");
-    randomUserId = "65210a07d5df7974e8bd05e3";
-  }
+  const user = await User.findById(request.body.userId); 
 
   const blog = new Blog({
     title: request.body.title,
     author: request.body.author,
     url: request.body.url,
     likes: request.body.likes || 0,
-    user: randomUserId,
+    user: request.body.userId,
   });
 
   try {
     const savedBlog = await blog.save();
+    user.blogs = user.blogs.concat(savedBlog._id);
+    await user.save();
     response.status(201).json(savedBlog);
   } catch (error) {
     next(error);
