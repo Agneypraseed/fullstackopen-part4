@@ -140,8 +140,7 @@ describe("Updating a blog", () => {
     const result = await api
       .put(`/api/blogs/${blogToUpdate._id}`)
       .send(newlikes)
-      .expect(200);
-    console.log(result);
+      .expect(200);    
     expect(result.body.likes).toEqual(newlikes.likes);
   });
 });
