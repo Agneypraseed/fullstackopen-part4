@@ -2,17 +2,37 @@ const mongoose = require("mongoose");
 const supertest = require("supertest");
 const app = require("../app");
 const Blog = require("../models/blog");
+const User = require("../models/user");
 const helper = require("./test_helper");
+const jwt = require("jsonwebtoken");
 
 const api = supertest(app);
 
+let token;
+let user;
+
 beforeEach(async () => {
   await Blog.deleteMany({});
+  await User.deleteMany({});
+
+  const testUser = new User({
+    username: "Test",
+    name: "Test User",
+    password: "test",
+  });
+  user = await testUser.save();
 
   for (let blog of helper.initialBLogList) {
     let blogObject = new Blog(blog);
     await blogObject.save();
   }
+
+  const userToken = {
+    username: user.username,
+    id: user._id,
+  };
+
+  token = jwt.sign(userToken, process.env.SECRET);
 });
 
 describe("Getting all the blogs", () => {
@@ -43,6 +63,7 @@ describe("Adding a new Blog", () => {
   beforeAll(async () => {
     await api
       .post("/api/blogs")
+      .set({ Authorization: `Bearer ${token}` })
       .send(newBlog)
       .expect(201)
       .expect("Content-Type", /application\/json/);
@@ -67,13 +88,14 @@ describe("Adding a new Blog", () => {
 
     await api
       .post("/api/blogs")
+      .set({ Authorization: `Bearer ${token}` })
       .send(newBlog)
       .expect(201)
       .expect("Content-Type", /application\/json/);
 
     const newBlogList = await helper.blogsInDb();
     const newAddedBlog = { ...newBlog, likes: 0 };
-    const { id, ...addedBlogWithoutId } = newBlogList.find(
+    const { id, user, ...addedBlogWithoutId } = newBlogList.find(
       (blog) => blog.title === "Test Blog"
     );
 
@@ -86,7 +108,11 @@ describe("Adding a new Blog", () => {
       author: "Agney Chan",
     };
 
-    await api.post("/api/blogs").send(newBlog).expect(400);
+    await api
+      .post("/api/blogs")
+      .set({ Authorization: `Bearer ${token}` })
+      .send(newBlog)
+      .expect(400);
 
     const newBlogList = await helper.blogsInDb();
     expect(newBlogList).toHaveLength(helper.initialBLogList.length);
@@ -98,7 +124,11 @@ describe("Adding a new Blog", () => {
       url: "LeAgney.ai",
     };
 
-    await api.post("/api/blogs").send(newBlog).expect(400);
+    await api
+      .post("/api/blogs")
+      .set({ Authorization: `Bearer ${token}` })
+      .send(newBlog)
+      .expect(400);
 
     const newBlogList = await helper.blogsInDb();
     expect(newBlogList).toHaveLength(helper.initialBLogList.length);
@@ -107,13 +137,23 @@ describe("Adding a new Blog", () => {
 
 describe("Deleting a blog", () => {
   test("succeeds with status code 204 if id is valid", async () => {
-    const blogToDelete = helper.initialBLogList[0];
+    const newBlog = new Blog({
+      title: "Test blog to be deleted",
+      author: "Tester",
+      url: "https://test.com/",
+      likes: 1000,
+      user: user.id,
+    });
+    const blogToDelete = await newBlog.save();
 
-    await api.delete(`/api/blogs/${blogToDelete._id}`).expect(204);
+    await api
+      .delete(`/api/blogs/${blogToDelete._id}`)
+      .set({ Authorization: `Bearer ${token}` })
+      .expect(204);
 
     const blogesAfter = await helper.blogsInDb();
 
-    expect(blogesAfter).toHaveLength(helper.initialBLogList.length - 1);
+    expect(blogesAfter).toHaveLength(helper.initialBLogList.length);
 
     const titles = blogesAfter.map((r) => r.title);
 
@@ -123,7 +163,10 @@ describe("Deleting a blog", () => {
   test("gives with status code 400 if id is malinformed", async () => {
     const malinformedId = "6526f113a68264af80977e9";
 
-    await api.delete(`/api/blogs/${malinformedId}`).expect(400);
+    await api
+      .delete(`/api/blogs/${malinformedId}`)
+      .set({ Authorization: `Bearer ${token}` })
+      .expect(400);
 
     const blogesAfter = await helper.blogsInDb();
 
@@ -139,6 +182,7 @@ describe("Updating a blog", () => {
     };
     const result = await api
       .put(`/api/blogs/${blogToUpdate._id}`)
+      .set({ Authorization: `Bearer ${token}` })
       .send(newlikes)
       .expect(200);
     expect(result.body.likes).toEqual(newlikes.likes);
