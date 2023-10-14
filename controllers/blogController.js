@@ -3,6 +3,17 @@ const Blog = require("../models/blog");
 const User = require("../models/user");
 const jwt = require("jsonwebtoken");
 
+const verifyAndExtractUserFromToken = async (token) => {
+  const decodedtoken = jwt.verify(token, process.env.SECRET);
+  if (!decodedtoken.id) {
+    return response
+      .status(401)
+      .json({ error: "Unauthorised : Token is invalid" });
+  }
+  const user = await User.findById(decodedtoken.id);
+  return user;
+};
+
 blogsRouter.get("/", async (request, response, next) => {
   try {
     const blogs = await Blog.find({}).populate("user", {
@@ -17,20 +28,13 @@ blogsRouter.get("/", async (request, response, next) => {
 
 blogsRouter.post("/", async (request, response, next) => {
   try {
-    const decodedtoken = jwt.verify(request.token, process.env.SECRET);
-    if (!decodedtoken.id) {
-      return response
-        .status(401)
-        .json({ error: "Unauthorised : Token is invalid" });
-    }
+    const user = await verifyAndExtractUserFromToken(request.token);
 
     if (!request.body.title || !request.body.url) {
       return response
         .status(400)
         .json({ error: "Title and URL cannot be empty" });
     }
-
-    const user = await User.findById(decodedtoken.id);
 
     const blog = new Blog({
       title: request.body.title,
@@ -51,9 +55,21 @@ blogsRouter.post("/", async (request, response, next) => {
 
 blogsRouter.delete("/:id", async (request, response, next) => {
   try {
-    const result = await Blog.findByIdAndRemove(request.params.id);
-    if (result) response.status(204).end();
-    response.status(400).json("Id doesnot exist");
+    const user = await verifyAndExtractUserFromToken(request.token);    
+    const blog = await Blog.findById(request.params.id);
+
+    if (!blog) {
+      response.status(400).json({ error: "Id doesnot exist" });
+    }
+
+    if (blog.user.toString() === user.id.toString()) {
+      await Blog.findByIdAndRemove(request.params.id);
+      response.status(204).end();
+    } else {
+      response
+        .status(400)
+        .json({ error: "User doesnot have the right to delete this blog" });
+    }
   } catch (error) {
     next(error);
   }
