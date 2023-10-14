@@ -1,6 +1,15 @@
 const blogsRouter = require("express").Router();
 const Blog = require("../models/blog");
 const User = require("../models/user");
+const jwt = require("jsonwebtoken");
+
+const getTokenFrom = (request) => {
+  const authorization = request.get("authorization");
+  if (authorization && authorization.startsWith("Bearer ")) {
+    return authorization.replace("Bearer ", "");
+  }
+  return null;
+};
 
 blogsRouter.get("/", async (request, response, next) => {
   try {
@@ -15,21 +24,32 @@ blogsRouter.get("/", async (request, response, next) => {
 });
 
 blogsRouter.post("/", async (request, response, next) => {
-  if (!request.body.title || !request.body.url) {
-    return response.status(400).json("Title and URL cannot be empty");
-  }
-
-  const user = await User.findById(request.body.userId); 
-
-  const blog = new Blog({
-    title: request.body.title,
-    author: request.body.author,
-    url: request.body.url,
-    likes: request.body.likes || 0,
-    user: request.body.userId,
-  });
-
   try {
+    const decodedtoken = jwt.verify(getTokenFrom(request), process.env.SECRET);
+    console.log(decodedtoken);
+    console.log('decodedtoken.id', decodedtoken.id)
+    if (!decodedtoken.id) {
+      return response
+        .status(401)
+        .json({ error: "Unauthorised : Token is invalid" });
+    }
+
+    if (!request.body.title || !request.body.url) {
+      return response
+        .status(400)
+        .json({ error: "Title and URL cannot be empty" });
+    }
+
+    const user = await User.findById(decodedtoken.id);
+
+    const blog = new Blog({
+      title: request.body.title,
+      author: request.body.author,
+      url: request.body.url,
+      likes: request.body.likes || 0,
+      user: user.id,
+    });
+
     const savedBlog = await blog.save();
     user.blogs = user.blogs.concat(savedBlog._id);
     await user.save();
